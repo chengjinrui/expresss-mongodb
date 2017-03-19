@@ -5,8 +5,34 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var index = require('./routes/index');
-var users = require('./routes/users');
+// var index = require('./routes/index');
+// var users = require('./routes/users');
+
+// 第二种写法
+var routes = require('./routes/index')
+//
+
+// 这是数据库的  在完成设置db.js之后写好就行
+var settings = require('./settings')
+//
+
+// 关于session
+var session = require('/express-session');
+// 关于mongodb存储会话信息
+var MongoStore = require('connect-mongo')(session);
+// 在完成数据库的settings之后 声明上述两个变量
+//
+//
+app.use(session({
+    secret : settings.cookieSecret,
+    key : settings.db,//cookie name
+    cookie : { maxAge : 1000 * 60 * 60 * 24 * 30 }, //30 days
+    store : new MongoStore({   //store 参数为 MongoStore 实例，把会话信息存储到数据库中，以避免丢失
+        db : settings.db,
+        host : settings.host,
+        port : settings.port
+    })
+}))
 
 var app = express();
 // 生成一个express实例app
@@ -28,10 +54,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 // 加载解析urlencoded请求体的中间件
 app.use(cookieParser());
+// 加载解析cookie的中间件
 app.use(express.static(path.join(__dirname, 'public')));
+// 设置public文件夹为存放静态文件的目录
 
 app.use('/', index);
 app.use('/users', users);
+// 路由控制器
+// 官方给出的写法是在 app.js 中实现了简单的路由分配，然后再去 index.js 中找到对应的路由函数，最终实现路由功能
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -50,5 +80,10 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+// 第二种写法
+routes(app);
+//
+
 
 module.exports = app;
